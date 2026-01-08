@@ -111,6 +111,8 @@ def download_single_file(index):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Download FineWeb-Edu 100BT dataset shards")
+    # 这行代码用于在命令行参数中添加一个选项 -n 或 --num-files，用户可以通过它指定要下载的数据分片(shard)数量。
+    # 具体来说，默认值为-1，-1表示不限制下载数量（即下载全部），通过命令行传入其他正整数时则只下载指定数量的分片。
     parser.add_argument("-n", "--num-files", type=int, default=-1, help="Number of shards to download (default: -1), -1 = disable")
     parser.add_argument("-w", "--num-workers", type=int, default=4, help="Number of parallel download workers (default: 4)")
     args = parser.parse_args()
