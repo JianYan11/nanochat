@@ -50,3 +50,8 @@
 1. **GitHub Personal Access Token (PAT)**: 在 GitHub 创建 token，推送时用户名输入 GitHub 用户名，密码输入 token
 2. **SSH 密钥**: 生成 SSH 密钥对，添加到 GitHub，然后将远程 URL 改为 SSH 格式
 3. **GitHub CLI**: 使用 `gh auth login` 进行身份验证
+
+**推送操作**:
+- 使用 GitHub Personal Access Token 成功推送到远程仓库
+- 推送了 2 个提交到 `origin/master`
+- 推送完成后已恢复远程 URL 为不含 token 的安全格式
