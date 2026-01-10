@@ -1,0 +1,4 @@
+Streaming+repacking `singletongue/cc100-documents` (zh-Hans) to local shard parquet files...
+Target directory: /root/.cache/nanochat/base_data
+target_chars=2,000,000,000 chars_per_shard=250,000,000 row_group_size=1024
+

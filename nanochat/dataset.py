@@ -13,6 +13,7 @@ import time
 import requests
 import pyarrow.parquet as pq
 from multiprocessing import Pool
+from tqdm import tqdm
 
 from nanochat.common import get_base_dir
 
@@ -69,7 +70,7 @@ def download_single_file(index):
 
     # Construct the remote URL for this file
     url = f"{BASE_URL}/{filename}"
-    print(f"Downloading {filename}...")
+    print(f"[{index}] Downloading {filename}...", flush=True)
 
     # Download with retries
     max_attempts = 5
@@ -77,15 +78,30 @@ def download_single_file(index):
         try:
             response = requests.get(url, stream=True, timeout=30)
             response.raise_for_status()
+            
+            # Get file size for progress bar
+            total_size = int(response.headers.get('content-length', 0))
+            
             # Write to temporary file first
             temp_path = filepath + f".tmp"
             with open(temp_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=1024 * 1024):  # 1MB chunks
-                    if chunk:
-                        f.write(chunk)
+                if total_size > 0:
+                    # Use tqdm for progress bar
+                    with tqdm(total=total_size, unit='B', unit_scale=True, unit_divisor=1024, 
+                             desc=f"[{index}] {filename}", leave=False, ncols=100) as pbar:
+                        for chunk in response.iter_content(chunk_size=1024 * 1024):  # 1MB chunks
+                            if chunk:
+                                f.write(chunk)
+                                pbar.update(len(chunk))
+                else:
+                    # No content-length header, download without progress bar
+                    for chunk in response.iter_content(chunk_size=1024 * 1024):
+                        if chunk:
+                            f.write(chunk)
+            
             # Move temp file to final location
             os.rename(temp_path, filepath)
-            print(f"Successfully downloaded {filename}")
+            print(f"[{index}] Successfully downloaded {filename}", flush=True)
             return True
 
         except (requests.RequestException, IOError) as e:
@@ -122,9 +138,16 @@ if __name__ == "__main__":
     print(f"Downloading {len(ids_to_download)} shards using {args.num_workers} workers...")
     print(f"Target directory: {DATA_DIR}")
     print()
+    
+    # Use tqdm to show overall progress
     with Pool(processes=args.num_workers) as pool:
-        results = pool.map(download_single_file, ids_to_download)
+        results = []
+        with tqdm(total=len(ids_to_download), desc="Overall progress", unit="file", ncols=100) as pbar:
+            # Use imap to get results as they complete
+            for result in pool.imap(download_single_file, ids_to_download):
+                results.append(result)
+                pbar.update(1)
 
     # Report results
     successful = sum(1 for success in results if success)
-    print(f"Done! Downloaded: {successful}/{len(ids_to_download)} shards to {DATA_DIR}")
+    print(f"\nDone! Downloaded: {successful}/{len(ids_to_download)} shards to {DATA_DIR}")
